@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Account;
 use App\Models\Transaction;
+use App\Models\Category;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Database\QueryException;
@@ -179,5 +181,50 @@ class TransactionController extends Controller
        
         
         
+    }
+
+    public function getAccountTransactions(string $id){
+        try{
+            Account::findOrFail($id);
+        }catch(ModelNotFoundException $exception){
+            return response()->json([
+            'message' => 'Not found!',
+            'data' => null
+            ],404);
+        }
+
+        $transactions=Transaction::where('sender_account_id','=',$id,'or')->orWhere('receiver_account_id','=',$id)->get();
+        return response()->json([
+            'message' => 'OK',
+            'data' => $transactions
+        ],200);
+    }
+
+    public function getAccountTransactionsByCategory(string $accountID, string $categoryID){
+        try{
+            Account::findOrFail($accountID);
+        }catch(ModelNotFoundException $exception){
+            return response()->json([
+            'message' => 'Not found!',
+            'data' => null
+            ],404);
+        }
+
+         try{
+            Category::findOrFail($categoryID);
+        }catch(ModelNotFoundException $exception){
+            return response()->json([
+            'message' => 'Not found!',
+            'data' => null
+            ],404);
+        }
+
+
+
+        $transactions = Transaction::whereAny(['sender_account_id','receiver_account_id'],'=',$accountID,'or')->where('category_id', $categoryID)->with('category')->get()->makeHidden('category_id');    
+        return response()->json([
+            'message' => 'OK',
+            'data' => $transactions
+        ],200);
     }
 }

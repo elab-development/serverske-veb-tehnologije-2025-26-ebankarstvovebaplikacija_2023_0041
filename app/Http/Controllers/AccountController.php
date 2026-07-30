@@ -166,4 +166,23 @@ class AccountController extends Controller
         }
 
     }
+
+    public function getUserAccounts(string $id){
+        try{
+            User::findOrFail($id);
+        }catch(ModelNotFoundException $exception){
+            return response()->json([
+                'message' => 'Not Found',
+                'data' => null
+            ],404);
+        }
+
+
+        $accounts=Account::where('user_id','=',$id,null)->get();
+
+        return response()->json([
+            'message' => 'OK',
+            'data' => $accounts
+        ],200);
+    }
 }

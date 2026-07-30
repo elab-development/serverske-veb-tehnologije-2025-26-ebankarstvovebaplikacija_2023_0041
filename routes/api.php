@@ -13,6 +13,9 @@ Route::apiResource('currencies', CurrencyController::class);
 Route::apiResource('accounts', AccountController::class);
 Route::apiResource('transactions', TransactionController::class);
 
+Route::get('/users/{id}/accounts',[AccountController::class,'getUserAccounts']);
+Route::get('/accounts/{id}/transactions',[TransactionController::class,'getAccountTransactions']);
+Route::get('/accounts/{accountID}/transactions/categories/{categoryID}',[TransactionController::class,'getAccountTransactionsByCategory']);
 
 
 
