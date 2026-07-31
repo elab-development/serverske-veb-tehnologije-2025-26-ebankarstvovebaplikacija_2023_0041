@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Http;
 
 class CurrencyController extends Controller
 {
@@ -39,7 +40,7 @@ class CurrencyController extends Controller
         try{
             $validatedObject=$request->validate([
                 'name' => 'required|string|max:30',
-                'code' => 'required|string|max:10',
+                'code' => 'required|uppercase|size:3',
             ]);
 
         }catch(ValidationException $exception){
@@ -103,7 +104,7 @@ class CurrencyController extends Controller
          try{
             $validatedObject=$request->validate([
                 'name' => 'sometimes|string|max:30',
-                'code' => 'sometimes|string|max:10',
+                'code' => 'sometimes|uppercase|size:3',
             ]);
         }catch(ValidationException $exception){
             return response()->json([
@@ -159,5 +160,42 @@ class CurrencyController extends Controller
        
         
         
+    }
+
+
+    public function convert(Request $request){
+
+        try{
+            $validatedObject=$request->validate([
+            'from_id' => 'required|exists:currencies,id',
+            'to_id' => 'required|exists:currencies,id',
+            'amount' => 'required|decimal:0,2'
+            ]);
+        }catch(ValidationException $exception){
+            return response()->json([
+                'message' => 'Unprocessable Entity'
+            ],422);
+        }
+
+        $currencyFrom=Currency::findOrFail($request->from_id);
+        $currencyTo=Currency::findOrFail($request->to_id);
+
+        $fromCode=$currencyFrom->code;
+        $toCode=$currencyTo->code;
+
+       
+
+        $url='https://api.frankfurter.dev/v2/rate/'.$fromCode.'/'.$toCode;
+        $response=Http::get($url);
+        $data=$response->json();
+
+        $rate=$data['rate'];
+        $convertedAmount=round($request->amount * $rate,2);    
+
+        return response()->json([
+            'message' => 'OK',
+            'data' => $convertedAmount
+        ],200);
+
     }
 }

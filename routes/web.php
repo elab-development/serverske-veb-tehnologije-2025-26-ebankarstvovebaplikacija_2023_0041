@@ -7,13 +7,16 @@ use App\Models\Account;
 use App\Models\Transaction;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 
 Route::get('/', function () {
     return view('welcome');
 });
 
 Route::get('/test', function () {
-    
+    $response = Http::get('https://api.frankfurter.dev/v2/rate/EUR/RSD');
+    $data = $response->json();
+    echo $data['rate'];
 });
 
 Route::get('/deleteData', function () {

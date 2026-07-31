@@ -17,9 +17,7 @@ Route::get('/users/{id}/accounts',[AccountController::class,'getUserAccounts']);
 Route::get('/accounts/{id}/transactions',[TransactionController::class,'getAccountTransactions']);
 Route::get('/accounts/{accountID}/transactions/categories/{categoryID}',[TransactionController::class,'getAccountTransactionsByCategory']);
 
-
-
-
+Route::post('/currencies/convert',[CurrencyController::class,'convert']);
 
 
 
