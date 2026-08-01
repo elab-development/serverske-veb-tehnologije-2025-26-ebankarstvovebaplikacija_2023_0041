@@ -23,6 +23,7 @@ Route::post('/currencies/convert',[CurrencyController::class,'convert']);
 Route::patch('/users/{id}/role',[UserController::class,'changeRole']);
 
 Route::post('/register',[AuthController::class,'register']);
+Route::post('/login',[AuthController::class,'login']);
 
 
 
