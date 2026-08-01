@@ -7,6 +7,7 @@ use Illuminate\Validation\ValidationException;
 use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Hash;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthController extends Controller
 {
@@ -65,5 +66,15 @@ class AuthController extends Controller
                 'token' => $token                
         ],200);
 
+    }
+
+    public function logout(Request $request){
+         /** @var PersonalAccessToken|null $token */
+        $token = $request->user()->currentAccessToken();
+
+        $token?->delete();
+        return response()->json([
+            'message' => 'OK',
+        ],200);
     }
 }
