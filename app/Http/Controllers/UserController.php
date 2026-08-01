@@ -169,4 +169,37 @@ class UserController extends Controller
         
         
     }
+
+    public function changeRole(Request $request,string $id){
+        try{
+            $validatedRole=$request->validate([
+            'role' => 'required|in:user,admin,super_admin'
+        ]);
+        }catch(ValidationException $exception){
+            return response()->json([
+                'message' => 'Unprocessable Entity',
+            ],422);
+        }
+
+        try{
+            $user=User::findOrFail($id);
+        }catch(ModelNotFoundException $exception){
+            return response()->json([
+                'message' => 'Not Found'
+            ],404);
+        }
+
+        $user->role=$validatedRole['role'];
+        try{
+            $user->save();
+        }catch(QueryException $exception){
+            return response()->json([
+                'message' => $user->first_name
+            ],500);
+        }
+
+        return response()->json([
+                'message' => 'OK'
+            ],200);
+    }
 }
