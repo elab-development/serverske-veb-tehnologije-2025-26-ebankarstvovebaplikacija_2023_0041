@@ -4,12 +4,14 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CurrencyController;
+use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register',[AuthController::class,'register']);
 Route::post('/login',[AuthController::class,'login']);
+Route::post('/forgot-password',[ForgotPasswordController::class,'forgotPassword']);
 
 Route::middleware(['auth:sanctum','role:admin,super_admin'])->group(function (){
     Route::apiResource('users', UserController::class)->only(['store','update','destroy']);
