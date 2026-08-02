@@ -34,7 +34,8 @@ class ForgotPasswordController extends Controller
             DB::table('password_reset_tokens')->insert([
             'email' => $validatedEmail['email'],
             'token' => Hash::make($token),
-            'created_at' => now()
+            'created_at' => now(),
+            'expires_at' => now()->addMinutes(30)
             ]);
         }catch(QueryException $exception){
             return response()->json([
