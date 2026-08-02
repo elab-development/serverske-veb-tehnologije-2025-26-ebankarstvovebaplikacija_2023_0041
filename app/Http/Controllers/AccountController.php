@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\AccountResource;
 use App\Models\Account;
 use App\Models\Currency;
 use Illuminate\Http\Request;
@@ -19,7 +20,7 @@ class AccountController extends Controller
     {
         return response()->json([
             'message' => 'OK',
-            'data' => Account::all()
+            'data' => AccountResource::collection(Account::with(['user','currency'])->get())
         ],200);
     }
 
@@ -69,10 +70,10 @@ class AccountController extends Controller
     public function show(string $id)
     {
         try{
-            $account = Account::findOrFail($id);
+            $account = Account::with(['user','currency'])->findOrFail($id);
             return response()->json([
                 'message' => 'OK',
-                'data' => $account
+                'data' => new AccountResource($account)
             ],200);
         }catch(ModelNotFoundException $exception){
             return response()->json([

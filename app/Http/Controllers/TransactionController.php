@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\TransactionResource;
 use App\Models\Account;
 use App\Models\Transaction;
 use App\Models\Category;
@@ -20,7 +21,7 @@ class TransactionController extends Controller
     {
         return response()->json([
             'message' => 'OK',
-            'data' => Transaction::all()
+            'data' => TransactionResource::collection(Transaction::with(['senderAccount.user','senderAccount.currency','receiverAccount.currency','receiverAccount.user','category'])->get())
         ],200);
     }
 
@@ -72,10 +73,10 @@ class TransactionController extends Controller
     public function show(string $id)
     {
         try{
-            $transaction = Transaction::findOrFail($id);
+            $transaction = Transaction::with(['senderAccount','receiverAccount'])->findOrFail($id);
             return response()->json([
                 'message' => 'OK',
-                'data' => $transaction
+                'data' => new TransactionResource($transaction)
             ],200);
         }catch(ModelNotFoundException $exception){
             return response()->json([

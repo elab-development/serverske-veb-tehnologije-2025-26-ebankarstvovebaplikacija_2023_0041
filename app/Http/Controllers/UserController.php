@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Database\QueryException;
@@ -14,10 +15,10 @@ class UserController extends Controller
      * Display a listing of the resource.
      */
     public function index()
-    {
+    {   
         return response()->json([
             'message' => 'OK',
-            'data' => User::all()
+            'data' => UserResource::collection(User::all())
         ],200);
     }
 
@@ -70,7 +71,7 @@ class UserController extends Controller
             $user = User::findOrFail($id);
             return response()->json([
                 'message' => 'OK',
-                'data' => $user
+                'data' => new UserResource($user)
             ],200);
         }catch(ModelNotFoundException $exception){
             return response()->json([

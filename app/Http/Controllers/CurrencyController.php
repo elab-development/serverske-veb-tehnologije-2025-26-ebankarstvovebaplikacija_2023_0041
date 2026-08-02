@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\CurrencyResource;
 use App\Models\Category;
 use App\Models\Currency;
 use Illuminate\Http\Request;
@@ -20,7 +21,7 @@ class CurrencyController extends Controller
     {
         return response()->json([
             'message' => 'OK',
-            'data' => Currency::all()
+            'data' => CurrencyResource::collection(Currency::all())
         ],200);
     }
 
@@ -71,7 +72,7 @@ class CurrencyController extends Controller
             $currency = Currency::findOrFail($id);
             return response()->json([
                 'message' => 'OK',
-                'data' => $currency
+                'data' => new CurrencyResource($currency)
             ],200);
         }catch(ModelNotFoundException $exception){
             return response()->json([

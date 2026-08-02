@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\CategoriesController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UserController;
@@ -13,7 +13,7 @@ Route::post('/login',[AuthController::class,'login']);
 
 Route::middleware(['auth:sanctum','role:admin,super_admin'])->group(function (){
     Route::apiResource('users', UserController::class)->only(['store','update','destroy']);
-    Route::apiResource('categories', CategoriesController::class)->only(['store','update','destroy']);
+    Route::apiResource('categories', CategoryController::class)->only(['store','update','destroy']);
     Route::apiResource('currencies', CurrencyController::class)->only(['store','update','destroy']);
     Route::apiResource('accounts', AccountController::class)->only(['store','update','destroy']);
     Route::apiResource('transactions', TransactionController::class)->only(['store','update','destroy']);
@@ -25,7 +25,7 @@ Route::middleware(['auth:sanctum','role:super_admin'])->group(function (){
 
 Route::middleware(['auth:sanctum','role:admin,super_admin,user'])->group(function (){
     Route::apiResource('users', UserController::class)->only(['index','show']);
-    Route::apiResource('categories', CategoriesController::class)->only(['index','show']);
+    Route::apiResource('categories', CategoryController::class)->only(['index','show']);
     Route::apiResource('currencies', CurrencyController::class)->only(['index','show']);
     Route::apiResource('accounts', AccountController::class)->only(['index','show']);
     Route::apiResource('transactions', TransactionController::class)->only(['index','show']);

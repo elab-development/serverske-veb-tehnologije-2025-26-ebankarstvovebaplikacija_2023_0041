@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\CategoryResource;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use App\Models\User;
@@ -9,7 +10,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
-class CategoriesController extends Controller
+class CategoryController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -18,7 +19,7 @@ class CategoriesController extends Controller
     {
         return response()->json([
             'message' => 'OK',
-            'data' => Category::all()
+            'data' => CategoryResource::collection(Category::all())
         ],200);
     }
 
@@ -68,7 +69,7 @@ class CategoriesController extends Controller
             $category = Category::findOrFail($id);
             return response()->json([
                 'message' => 'OK',
-                'data' => $category
+                'data' => new CategoryResource($category)
             ],200);
         }catch(ModelNotFoundException $exception){
             return response()->json([
