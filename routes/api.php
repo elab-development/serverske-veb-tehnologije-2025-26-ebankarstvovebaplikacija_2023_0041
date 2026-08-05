@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ExportController;
 use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\ResetPasswordController;
@@ -16,6 +17,11 @@ Route::post('/forgot-password',[ForgotPasswordController::class,'forgotPassword'
 Route::post('/reset-password',[ResetPasswordController::class,'resetPassword']);
 
 Route::middleware(['auth:sanctum','role:admin,super_admin'])->group(function (){
+    Route::get('/users/export',[ExportController::class,'exportUsers']);
+    Route::get('/categories/export',[ExportController::class,'exportCategories']);
+    Route::get('/currencies/export',[ExportController::class,'exportCurrencies']);
+    Route::get('/accounts/export',[ExportController::class,'exportAccounts']);
+    Route::get('/transactions/export',[ExportController::class,'exportTransactions']);
     Route::apiResource('users', UserController::class)->only(['store','update','destroy']);
     Route::apiResource('categories', CategoryController::class)->only(['store','update','destroy']);
     Route::apiResource('currencies', CurrencyController::class)->only(['store','update','destroy']);
