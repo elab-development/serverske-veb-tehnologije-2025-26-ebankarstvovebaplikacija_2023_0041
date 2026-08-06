@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Account;
 use App\Models\Transaction;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class ExportController extends Controller
 {
@@ -192,6 +194,44 @@ class ExportController extends Controller
         };
 
         return response()->stream($callback,200,$headers);
+    }
+
+
+    public function exportUserTransaction(Request $request, string $id){
+        $user=$request->user();
+
+        try{
+            $transaction = Transaction::where('id','=',$id,'and')->where(
+            function ($query) use ($user){
+                $query->whereHas('senderAccount', function ($accountQuery) use ($user){
+                    $accountQuery->where('user_id',$user->id);
+                })->orWhereHas('receiverAccount', function ($accountQuery) use ($user){
+                    $accountQuery->where('user_id',$user->id);
+                });
+            })->with(['receiverAccount','senderAccount','receiverAccount.currency','category'])->firstOrFail();
+        }catch(ModelNotFoundException $exception){
+            return response()->json([
+                'message' => 'Not found'
+            ],404);
+        }
+        
+
+
+
+        $pdf = Pdf::loadView('pdf.transaction',[
+            'id' => $transaction->id,
+            'name' => $transaction->name,
+            'category' => $transaction->category->name,
+            'senderAccount' => $transaction->senderAccount->account_number,
+            'receiverAccount' => $transaction->receiverAccount->account_number,
+            'currency' => $transaction->receiverAccount->currency->code,
+            'amount' => $transaction->amount,
+            'date' => $transaction->date_time->format('Y-m-d'),
+            'time' => $transaction->date_time->format('H:i')   
+        ]);
+
+
+        return $pdf->download('transaction'.$transaction->id.'.pdf');
     }
     
 }

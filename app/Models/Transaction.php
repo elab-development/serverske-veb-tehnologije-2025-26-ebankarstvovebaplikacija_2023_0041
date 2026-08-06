@@ -13,6 +13,13 @@ class Transaction extends Model
     protected $guarded = ['id'];
     public $timestamps = false;
 
+
+    protected function casts():array{
+        return [
+            'date_time' => 'datetime'
+        ];
+    }
+
     public function senderAccount():BelongsTo{
         return $this->belongsTo(Account::class);
     }
