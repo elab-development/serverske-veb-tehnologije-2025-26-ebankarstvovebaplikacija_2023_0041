@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\CurrencyController;
+use App\Http\Controllers\ImportController;
 use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\ResetPasswordController;
 use App\Http\Controllers\TransactionController;
@@ -15,6 +16,12 @@ Route::post('/register',[AuthController::class,'register']);
 Route::post('/login',[AuthController::class,'login']);
 Route::post('/forgot-password',[ForgotPasswordController::class,'forgotPassword']);
 Route::post('/reset-password',[ResetPasswordController::class,'resetPassword']);
+
+Route::post('/users/import',[ImportController::class,'importUsers']);
+Route::post('/categories/import',[ImportController::class,'importCategories']);
+Route::post('/currencies/import',[ImportController::class,'importCurrencies']);
+Route::post('/accounts/import',[ImportController::class,'importAccounts']);
+Route::post('/transactions/import',[ImportController::class,'importTransactions']);
 
 Route::middleware(['auth:sanctum','role:admin,super_admin'])->group(function (){
     Route::get('/users/export',[ExportController::class,'exportUsers']);
