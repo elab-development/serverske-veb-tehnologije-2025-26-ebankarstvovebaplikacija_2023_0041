@@ -15,13 +15,13 @@ class UserResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->when(
-                ($request->user()?->role === 'admin' || $request->user()?->role === 'super_admin'),
-                $this->id
-            ),
+            'id' => $this->id,
             'first_name' => $this->first_name, 
             'last_name' => $this->last_name,
-            'email' => $this->email,
+            'email' => $this->when(
+                ($request->user()?->role === 'admin' || $request->user()?->role === 'super_admin'), 
+                $this->email
+            ),
             'password' => $this->when(
                 ($request->user()?->role === 'admin' || $request->user()?->role === 'super_admin'), 
                 $this->password

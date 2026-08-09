@@ -14,8 +14,14 @@ class UserController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {   
+        if($request->user()->role == 'user')
+        return response()->json([
+            'message' => 'OK',
+            'data' => UserResource::collection(User::where('role','!=','admin','and')->where('role','!=','super_admin')->get())
+        ],200);
+        else
         return response()->json([
             'message' => 'OK',
             'data' => UserResource::collection(User::all())

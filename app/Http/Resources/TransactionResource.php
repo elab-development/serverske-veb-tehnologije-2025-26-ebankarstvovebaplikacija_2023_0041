@@ -18,7 +18,7 @@ class TransactionResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'amount' => $this->amount,
-            'date_time' => $this->date_time,
+            'date_time' => $this->date_time->format('Y-m-d H:i:s'),
             'sender_account' => new AccountResource($this->whenLoaded('senderAccount')),
             'receiver_account' => new AccountResource($this->whenLoaded('receiverAccount')),
             'category' => new CategoryResource($this->whenLoaded('category'))

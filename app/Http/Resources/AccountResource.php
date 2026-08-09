@@ -17,7 +17,10 @@ class AccountResource extends JsonResource
         return [
             'id' => $this->id,
             'account_number' => $this->account_number,
-            'balance' => $this->balance,
+            'balance' => $this->when(
+                ($request->user()->role === 'admin' || $request->user()->role === 'super_admin'),
+                $this->balance
+            ),
             'user' => new UserResource($this->whenLoaded('user')),
             'currency' => new CurrencyResource($this->whenLoaded('currency'))
         ];

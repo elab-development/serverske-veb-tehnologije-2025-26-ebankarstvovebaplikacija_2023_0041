@@ -17,8 +17,21 @@ class TransactionController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
-    {
+    public function index(Request $request)
+    {   
+        if($request->user()->role==='user')
+        return response()->json([
+            'message' => 'OK',
+            'data' => TransactionResource::collection(Transaction::with(['senderAccount.user','senderAccount.currency','receiverAccount.currency','receiverAccount.user','category'])->where(function ($query) use ($request){
+                $query->whereHas('senderAccount',function ($q) use ($request){
+                    $q->where('user_id','=',$request->user()->id);
+                })
+                ->orWhereHas('receiverAccount',function ($q) use ($request){
+                    $q->where('user_id','=','$request->user()->id');
+                });
+            })->get())
+        ],200);  
+        else
         return response()->json([
             'message' => 'OK',
             'data' => TransactionResource::collection(Transaction::with(['senderAccount.user','senderAccount.currency','receiverAccount.currency','receiverAccount.user','category'])->get())
@@ -70,10 +83,30 @@ class TransactionController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
-    {
+    public function show(Request $request,string $id)
+    {   
+        if($request->user()->role === 'user'){
+            try{
+                $data=new TransactionResource(Transaction::with(['senderAccount.user','senderAccount.currency','receiverAccount.currency','receiverAccount.user','category'])->where('id','=',$id,'and')->where(function ($query) use ($request){
+                $query->whereHas('senderAccount',function ($q) use ($request){
+                    $q->where('user_id','=',$request->user()->id);
+                })->orWhereHas('receiverAccount',function ($q) use ($request){
+                    $q->where('user_id','=',$request->user()->id);
+                });
+            })->firstOrFail()); 
+
+            }catch(ModelNotFoundException $exception){
+                return response()->json([
+                'message' => 'Not Found',
+                ],404);
+            }
+            
+        }
+
+
+
         try{
-            $transaction = Transaction::with(['senderAccount','receiverAccount'])->findOrFail($id);
+            $transaction = Transaction::with(['senderAccount.user','senderAccount.currency','receiverAccount.currency','receiverAccount.user','category'])->findOrFail($id);
             return response()->json([
                 'message' => 'OK',
                 'data' => new TransactionResource($transaction)
@@ -184,7 +217,28 @@ class TransactionController extends Controller
         
     }
 
-    public function getAccountTransactions(string $id){
+    public function getAccountTransactions(Request $request,string $id){
+        if($request->user()->role === 'user'){
+            $data=TransactionResource::collection(Transaction::with(['senderAccount.user','senderAccount.currency','receiverAccount.currency','receiverAccount.user','category'])->whereAny(['sender_account_id','receiver_account_id'],'=',$id)->where(function ($query) use ($request){
+                        $query->whereHas('senderAccount',function ($q) use ($request){
+                            $q->where('user_id','=',$request->user()->id);
+                        })->orWhereHas('receiverAccount',function ($q) use ($request){
+                            $q->where('user_id','=',$request->user()->id);
+                        });
+                    })->get());
+
+                if($data->isEmpty())
+                    return response()->json([
+                    'message' => 'Not Found',
+                    ],404);
+
+                return response()->json([
+                    'message' => 'OK',
+                    'data' => $data
+                ],200);
+        }
+
+
         try{
             Account::findOrFail($id);
         }catch(ModelNotFoundException $exception){
@@ -194,14 +248,35 @@ class TransactionController extends Controller
             ],404);
         }
 
-        $transactions=Transaction::where('sender_account_id','=',$id,'or')->orWhere('receiver_account_id','=',$id)->get();
+        $transactions=Transaction::with(['senderAccount.user','receiverAccount.user','senderAccount.currency','receiverAccount.currency','category'])->where('sender_account_id','=',$id,'or')->orWhere('receiver_account_id','=',$id)->get();
         return response()->json([
             'message' => 'OK',
-            'data' => $transactions
+            'data' => TransactionResource::collection($transactions)
         ],200);
     }
 
-    public function getAccountTransactionsByCategory(string $accountID, string $categoryID){
+    public function getAccountTransactionsByCategory(Request $request,string $accountID, string $categoryID){
+        if($request->user()->role==='user'){
+            $data=$transactions = Transaction::with('category')->whereAny(['sender_account_id','receiver_account_id'],'=',$accountID,'or')->where('category_id', $categoryID)->where(function ($query) use ($request){
+                        $query->whereHas('senderAccount',function ($q) use ($request){
+                            $q->where('user_id','=',$request->user()->id);
+                        })->orWhereHas('receiverAccount',function ($q) use ($request){
+                            $q->where('user_id','=',$request->user()->id);
+                        });
+                    })->get();  
+            
+            if($data->isEmpty())
+                return response()->json([
+                'message' => 'Not Found',
+                ],404);
+
+            return response()->json([
+                'message' => 'OK',
+                'data' => TransactionResource::collection($data)
+            ]);
+        }
+
+
         try{
             Account::findOrFail($accountID);
         }catch(ModelNotFoundException $exception){
@@ -220,12 +295,12 @@ class TransactionController extends Controller
             ],404);
         }
 
+        
 
-
-        $transactions = Transaction::whereAny(['sender_account_id','receiver_account_id'],'=',$accountID,'or')->where('category_id', $categoryID)->with('category')->get()->makeHidden('category_id');    
+        $transactions = Transaction::whereAny(['sender_account_id','receiver_account_id'],'=',$accountID,'or')->where('category_id', $categoryID)->with(['category','senderAccount.user','senderAccount.currency','receiverAccount.user','receiverAccount.currency'])->get()->makeHidden('category_id');    
         return response()->json([
             'message' => 'OK',
-            'data' => $transactions
+            'data' => TransactionResource::collection($transactions)
         ],200);
     }
 }
