@@ -27,7 +27,7 @@ Route::middleware(['auth:sanctum','role:admin,super_admin'])->group(function (){
     Route::apiResource('categories', CategoryController::class)->only(['store','update','destroy']);
     Route::apiResource('currencies', CurrencyController::class)->only(['store','update','destroy']);
     Route::apiResource('accounts', AccountController::class)->only(['store','update','destroy']);
-    Route::apiResource('transactions', TransactionController::class)->only(['store','update','destroy']);
+    Route::apiResource('transactions', TransactionController::class)->only(['update','destroy']);
     Route::post('/users/import',[ImportController::class,'importUsers']);
     Route::post('/categories/import',[ImportController::class,'importCategories']);
     Route::post('/currencies/import',[ImportController::class,'importCurrencies']);
@@ -41,16 +41,16 @@ Route::middleware(['auth:sanctum','role:super_admin'])->group(function (){
 });
 
 Route::middleware(['auth:sanctum','role:admin,super_admin,user'])->group(function (){
-    Route::apiResource('transactions', TransactionController::class)->only(['index','show']);
+    Route::apiResource('transactions', TransactionController::class)->only(['index','show','store']);
     Route::apiResource('users', UserController::class)->only(['index','show']);
     Route::apiResource('categories', CategoryController::class)->only(['index','show']);
     Route::apiResource('currencies', CurrencyController::class)->only(['index','show']);
     Route::apiResource('accounts', AccountController::class)->only(['index','show']);
     Route::post('/logout',[AuthController::class,'logout']);
     Route::post('/currencies/convert',[CurrencyController::class,'convert']);
-    Route::get('/my-transactions/{id}/export',[ExportController::class,'exportUserTransaction']);
+    Route::get('/transactions/{id}/export',[ExportController::class,'exportUserTransaction']);
     Route::get('/my-accounts',[AccountController::class,'getMyAccounts']);
     Route::get('/accounts/{id}/transactions',[TransactionController::class,'getAccountTransactions']);
     Route::get('/accounts/{accountID}/transactions/categories/{categoryID}',[TransactionController::class,'getAccountTransactionsByCategory']);
-    Route::get('/search-transaction',[TransactionController::class,'searchTransaction']);
+    Route::get('/transactions/search',[TransactionController::class,'searchTransaction']);
 });

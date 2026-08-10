@@ -69,6 +69,16 @@ class TransactionController extends Controller
             ],422);
         }
 
+        if($request->user()->role === 'user')
+        {
+            $belongsToUser = Account::where('id','=',$request->sender_account_id,'and')->where('user_id','=',$request->user()->id)->exists();
+
+            if(!$belongsToUser)
+                return response()->json([
+                    'message' => 'Unauthorized'
+            ],403);
+        }
+
         $senderAccount=Account::with('currency')->findOrFail($request->sender_account_id);
         $receiverAccount=Account::with('currency')->findOrFail($request->receiver_account_id);
         $amount=$request->amount;
