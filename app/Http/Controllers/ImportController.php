@@ -12,6 +12,9 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\Currency;
 use App\Models\Account;
 use App\Models\Transaction;
+use Illuminate\Support\Facades\DB;
+use App\Services\CurrencyService;
+
 
 class ImportController extends Controller
 {
@@ -205,7 +208,12 @@ class ImportController extends Controller
         while(($row = fgetcsv($handle)) !== false){
             $data = array_combine($header,$row);
             $validated =Validator::make($data,[
-                    'account_number' => 'required|string|min:19',
+                    'account_number' => [
+                    'required',
+                    'string',
+                    'regex:/^\d{19}$/',
+                    'unique:accounts,account_number',
+                    ],
                     'balance' => ['required','regex:/^\d{1,15}(\.\d{1,2})?$/'],
                     'user_id' => 'required|exists:users,id',
                     'currency_id' => 'required|exists:currencies,id'
@@ -256,13 +264,14 @@ class ImportController extends Controller
         $handle = fopen($file->getRealPath(),'r');
         $header = fgetcsv($handle);
 
-        $accountsToSave=[];
+        $transactionsToSave=[];
+        DB::beginTransaction();
+        $counter = 1;
         while(($row = fgetcsv($handle)) !== false){
             $data = array_combine($header,$row);
             $validated =Validator::make($data,[
                     'name' => 'required|string|max:50',
                     'amount' => ['required', 'regex:/^\d{1,48}(\.\d{1,2})?$/'],
-                    'date_time' => 'required|date_format:Y-m-d H:i:s',
                     'sender_account_id' => 'required|exists:accounts,id',
                     'receiver_account_id' => 'required|exists:accounts,id',
                     'category_id' => 'required|exists:categories,id'
@@ -270,19 +279,52 @@ class ImportController extends Controller
 
             if($validated->fails()){
                 fclose($handle);
-
+                DB::rollback();
                 return response()->json([
                 'message' => 'Unproccesable Entity'
                 ],422);
             }
-
+            
             $validatedData=$validated->validated();
-            $accountsToSave[]=$validatedData;
+            $validatedData['date_time']=now();
+
+            $senderAccount=Account::with('currency')->findOrFail($validatedData['sender_account_id']);
+            $receiverAccount=Account::with('currency')->findOrFail($validatedData['receiver_account_id']);
+            $amount=$validatedData['amount'];
+            $amountToCheck=0;
+        if($senderAccount->currency->id != $receiverAccount->currency->id){
+            $currencyService=new CurrencyService();
+            $fromCode=$senderAccount->currency->code;
+            $toCode=$receiverAccount->currency->code;
+            $amountToCheck=$currencyService->exchange($toCode,$fromCode,$amount);
+        }else{
+            $amountToCheck=$amount;
+        }
+
+    
+        if($senderAccount->balance < $amountToCheck)
+            return response()->json([
+            'message' => "Insufficient funds on transaction {$counter}!"
+        ],422);
+
+        
+        $senderAccount->balance=$senderAccount->balance - $amountToCheck;
+        $receiverAccount->balance=$receiverAccount->balance + $amount;
+        $senderAccount->save();
+        $receiverAccount->save();
+
+        $counter=$counter+1;
+
+            
+            $transactionsToSave[]=$validatedData;
         }
 
         fclose($handle);
 
-        Transaction::insert($accountsToSave);
+        Transaction::insert($transactionsToSave);
+
+
+        DB::commit();
 
         $fileName = now()->format('Y_m_d_H_i_s') . '.csv';
         Storage::putFileAs(

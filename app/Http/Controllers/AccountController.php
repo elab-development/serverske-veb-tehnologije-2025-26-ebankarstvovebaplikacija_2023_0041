@@ -39,7 +39,12 @@ class AccountController extends Controller
     {
         try{
             $validatedObject=$request->validate([
-                'account_number' => 'required|string|min:19',
+                'account_number' => [
+                    'required',
+                    'string',
+                    'regex:/^\d{19}$/',
+                    'unique:accounts,account_number',
+                ],
                 'balance' => ['required','regex:/^\d{1,15}(\.\d{1,2})?$/'],
                 'user_id' => 'required|exists:users,id',
                 'currency_id' => 'required|exists:currencies,id'
@@ -105,7 +110,12 @@ class AccountController extends Controller
         
          try{
             $validatedObject=$request->validate([
-                'account_number' => 'sometimes|string|min:19',
+                'account_number' => [
+                    'sometimes',
+                    'string',
+                    'regex:/^\d{19}$/',
+                    'unique:accounts,account_number',
+                ],
                 'balance' => ['sometimes','regex:/^\d{1,15}(\.\d{1,2})?$/'],
                 'user_id' => 'sometimes|exists:users,id',
                 'currency_id' => 'sometimes|exists:currencies,id'
@@ -184,5 +194,13 @@ class AccountController extends Controller
             'message' => 'OK',
             'data' => AccountResource::collection($accounts)
         ],200);
+    }
+
+    public function getMyAccounts(Request $request){
+        $data=Account::where('user_id','=',$request->user()->id,null)->get();
+        return response()->json([
+            'message' => 'OK',
+            'data' => $data
+        ]);
     }
 }

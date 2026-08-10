@@ -33,6 +33,7 @@ Route::middleware(['auth:sanctum','role:admin,super_admin'])->group(function (){
     Route::post('/currencies/import',[ImportController::class,'importCurrencies']);
     Route::post('/accounts/import',[ImportController::class,'importAccounts']);
     Route::post('/transactions/import',[ImportController::class,'importTransactions']);
+    Route::get('/users/{id}/accounts',[AccountController::class,'getUserAccounts']);
 });
 
 Route::middleware(['auth:sanctum','role:super_admin'])->group(function (){
@@ -46,9 +47,10 @@ Route::middleware(['auth:sanctum','role:admin,super_admin,user'])->group(functio
     Route::apiResource('currencies', CurrencyController::class)->only(['index','show']);
     Route::apiResource('accounts', AccountController::class)->only(['index','show']);
     Route::post('/logout',[AuthController::class,'logout']);
-    Route::get('/users/{id}/accounts',[AccountController::class,'getUserAccounts']);
     Route::post('/currencies/convert',[CurrencyController::class,'convert']);
     Route::get('/my-transactions/{id}/export',[ExportController::class,'exportUserTransaction']);
+    Route::get('/my-accounts',[AccountController::class,'getMyAccounts']);
     Route::get('/accounts/{id}/transactions',[TransactionController::class,'getAccountTransactions']);
     Route::get('/accounts/{accountID}/transactions/categories/{categoryID}',[TransactionController::class,'getAccountTransactionsByCategory']);
+    Route::get('/search-transaction',[TransactionController::class,'searchTransaction']);
 });

@@ -7,10 +7,11 @@ use App\Models\Category;
 use App\Models\Currency;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Services\CurrencyService;
 use Illuminate\Database\QueryException;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Support\Facades\Http;
+
 
 class CurrencyController extends Controller
 {
@@ -184,18 +185,10 @@ class CurrencyController extends Controller
         $fromCode=$currencyFrom->code;
         $toCode=$currencyTo->code;
 
-       
-
-        $url='https://api.frankfurter.dev/v2/rate/'.$fromCode.'/'.$toCode;
-        $response=Http::get($url);
-        $data=$response->json();
-
-        $rate=$data['rate'];
-        $convertedAmount=round($request->amount * $rate,2);    
-
+        $currencyService=new CurrencyService();
         return response()->json([
             'message' => 'OK',
-            'data' => $convertedAmount
+            'data' => $currencyService->exchange($fromCode,$toCode,$request->amount)
         ],200);
 
     }

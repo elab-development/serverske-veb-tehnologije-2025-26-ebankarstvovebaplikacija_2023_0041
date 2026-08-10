@@ -8,9 +8,12 @@ use App\Models\Transaction;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Services\CurrencyService;
 use Illuminate\Database\QueryException;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\DB;
+
 
 class TransactionController extends Controller
 {
@@ -55,7 +58,6 @@ class TransactionController extends Controller
             $validatedObject=$request->validate([
                 'name' => 'required|string|max:50',
                 'amount' => ['required', 'regex:/^\d{1,48}(\.\d{1,2})?$/'],
-                'date_time' => 'required|date_format:Y-m-d H:i:s',
                 'sender_account_id' => 'required|exists:accounts,id',
                 'receiver_account_id' => 'required|exists:accounts,id',
                 'category_id' => 'required|exists:categories,id'
@@ -67,14 +69,43 @@ class TransactionController extends Controller
             ],422);
         }
 
+        $senderAccount=Account::with('currency')->findOrFail($request->sender_account_id);
+        $receiverAccount=Account::with('currency')->findOrFail($request->receiver_account_id);
+        $amount=$request->amount;
+        $amountToCheck=0;
+        if($senderAccount->currency->id != $receiverAccount->currency->id){
+            $currencyService=new CurrencyService();
+            $fromCode=$senderAccount->currency->code;
+            $toCode=$receiverAccount->currency->code;
+            $amountToCheck=$currencyService->exchange($toCode,$fromCode,$amount);
+        }else{
+            $amountToCheck=$amount;
+        }
+
+        if($senderAccount->balance < $amountToCheck)
+            return response()->json([
+            'message' => "Insufficient funds on transaction!"
+        ],422);
+
+        $senderAccount->balance=$senderAccount->balance - $amountToCheck;
+        $receiverAccount->balance=$receiverAccount->balance + $amount;
+
+        DB::beginTransaction();
+
+        $senderAccount->save();
+        $receiverAccount->save();
+
         try{
+            $validatedObject['date_time'] = now();
             Transaction::create($validatedObject);
         }catch(QueryException $exception){
+            DB::rollBack();
             return response()->json([
                 'message' => 'Internal Server Error',                
             ],500);
         }
 
+        DB::commit();
         return response()->json([
                 'message' => 'Created',                
             ],201);
@@ -302,5 +333,28 @@ class TransactionController extends Controller
             'message' => 'OK',
             'data' => TransactionResource::collection($transactions)
         ],200);
+    }
+
+
+    public function searchTransaction(Request $request){
+        $searchInput=$request->query('input');
+        $transactions=[];
+
+        if($request->user()->role === 'user')
+        $transactions= Transaction::with('senderAccount.user','receiverAccount.user','senderAccount.currency','receiverAccount.currency','category')->where('name','like',"{$searchInput}%")->where(function ($query) use ($request){
+            $query->whereHas('senderAccount',function ($q) use ($request){
+                $q->where('user_id','=',$request->user()->id);
+            })->orWhereHas('receiverAccount',function ($q) use ($request){
+                $q->where('user_id',$request->user()->id);
+            });
+        })->get();
+        else
+        $transactions= Transaction::with('senderAccount.user','receiverAccount.user','senderAccount.currency','receiverAccount.currency','category')->where('name','like',"{$searchInput}%")->get();
+        
+        
+        return response()->json([
+            'message' => 'OK',
+            'data' => TransactionResource::collection($transactions)
+        ]);
     }
 }
