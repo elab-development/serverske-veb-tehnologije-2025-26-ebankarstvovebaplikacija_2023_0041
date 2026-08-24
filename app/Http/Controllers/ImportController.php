@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
-use Nette\Schema\ValidationException;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
@@ -138,7 +138,7 @@ class ImportController extends Controller
    public function importCurrencies(Request $request){
         try{
             $validated=$request->validate([
-                'file' => 'required|file|mimes:csv|max:2048'
+                'file' => 'required|file|mimes:csv,txt|max:2048'
             ]);
         }catch(ValidationException $exception){
             return response()->json([
@@ -157,7 +157,7 @@ class ImportController extends Controller
 
             $validated =Validator::make($data,[
                     'name' => 'required|string|max:30',
-                    'code' => 'required|uppercase|size:3'
+                    'code' => 'required|uppercase|size:3|unique:currencies,code'
                 ]);
 
             if($validated->fails()){
@@ -165,6 +165,13 @@ class ImportController extends Controller
 
                 return response()->json([
                 'message' => 'Unproccesable Entity'
+                ],422);
+            }
+
+            if(!CurrencyService::codeExists($data['code'])){
+                fclose($handle);
+                return response()->json([
+                    'message' => 'Invalid currency code'
                 ],422);
             }
 
@@ -252,7 +259,7 @@ class ImportController extends Controller
    public function importTransactions(Request $request){
         try{
             $validated=$request->validate([
-                'file' => 'required|file|mimes:csv|max:2048'
+                'file' => 'required|file|mimes:csv,txt|max:2048'
             ]);
         }catch(ValidationException $exception){
             return response()->json([
@@ -293,10 +300,9 @@ class ImportController extends Controller
             $amount=$validatedData['amount'];
             $amountToCheck=0;
         if($senderAccount->currency->id != $receiverAccount->currency->id){
-            $currencyService=new CurrencyService();
             $fromCode=$senderAccount->currency->code;
             $toCode=$receiverAccount->currency->code;
-            $amountToCheck=$currencyService->exchange($toCode,$fromCode,$amount);
+            $amountToCheck=CurrencyService::exchange($toCode,$fromCode,$amount);
         }else{
             $amountToCheck=$amount;
         }

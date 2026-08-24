@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
-use Nette\Schema\ValidationException;
+use Illuminate\Validation\ValidationException;
 use App\Mail\MyMail;
 use Illuminate\Support\Facades\Mail;
 
@@ -39,7 +39,7 @@ class ForgotPasswordController extends Controller
             ]);
         }catch(QueryException $exception){
             return response()->json([
-                'error' => $exception->getMessage()
+                'error' => "Internal Server Error"
             ], 500);
         }
         

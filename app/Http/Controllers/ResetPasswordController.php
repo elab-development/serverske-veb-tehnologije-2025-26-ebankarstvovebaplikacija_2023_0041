@@ -44,7 +44,7 @@ class ResetPasswordController extends Controller
           DB::table('password_reset_tokens')->where('email','=',$validatedObject['email'])->delete();
           return response()->json([
             'message' => 'Token has expired!'
-          ],422);
+          ],400);
         }
 
         try{
@@ -54,7 +54,7 @@ class ResetPasswordController extends Controller
         }catch(QueryException $exception){
             return response()->json([
              'message' => 'Internal Server Error'   
-            ],422);
+            ],500);
         }
 
         DB::table('password_reset_tokens')->where('email','=',$validatedObject['email'])->delete();
@@ -63,7 +63,7 @@ class ResetPasswordController extends Controller
 
 
         return response()->json([
-             'message' => 'Your password has been reseted!'   
+             'message' => 'Your password has been reset!'   
         ],200);
     }
 }

@@ -57,9 +57,9 @@ class TransactionController extends Controller
         try{
             $validatedObject=$request->validate([
                 'name' => 'required|string|max:50',
-                'amount' => ['required', 'regex:/^\d{1,48}(\.\d{1,2})?$/'],
+                'amount' => ['required', 'regex:/^\d{1,13}(\.\d{1,2})?$/','gt:0'],
                 'sender_account_id' => 'required|exists:accounts,id',
-                'receiver_account_id' => 'required|exists:accounts,id',
+                'receiver_account_id' => 'required|exists:accounts,id|different:sender_account_id',
                 'category_id' => 'required|exists:categories,id'
             ]);
 
@@ -75,7 +75,7 @@ class TransactionController extends Controller
 
             if(!$belongsToUser)
                 return response()->json([
-                    'message' => 'Unauthorized'
+                    'message' => 'Forbbiden'
             ],403);
         }
 
@@ -84,17 +84,16 @@ class TransactionController extends Controller
         $amount=$request->amount;
         $amountToCheck=0;
         if($senderAccount->currency->id != $receiverAccount->currency->id){
-            $currencyService=new CurrencyService();
             $fromCode=$senderAccount->currency->code;
             $toCode=$receiverAccount->currency->code;
-            $amountToCheck=$currencyService->exchange($toCode,$fromCode,$amount);
+            $amountToCheck=CurrencyService::exchange($toCode,$fromCode,$amount);
         }else{
             $amountToCheck=$amount;
         }
 
         if($senderAccount->balance < $amountToCheck)
             return response()->json([
-            'message' => "Insufficient funds on transaction!"
+            'message' => "Insufficient funds"
         ],422);
 
         $senderAccount->balance=$senderAccount->balance - $amountToCheck;
@@ -172,6 +171,7 @@ class TransactionController extends Controller
      */
     public function update(Request $request, string $id)
     {
+        /* 
         try{
             $transaction=Transaction::findOrFail($id);
         }catch(ModelNotFoundException $exception){
@@ -229,6 +229,8 @@ class TransactionController extends Controller
         return response()->json([
                 'message' => 'OK'
         ],200);
+
+        */
     }
 
     /**
@@ -236,6 +238,7 @@ class TransactionController extends Controller
      */
     public function destroy(string $id)
     {   
+        /* 
         try{
              $deletedRows=Transaction::destroy($id);
 
@@ -255,7 +258,7 @@ class TransactionController extends Controller
         }
        
         
-        
+        */
     }
 
     public function getAccountTransactions(Request $request,string $id){
@@ -285,7 +288,6 @@ class TransactionController extends Controller
         }catch(ModelNotFoundException $exception){
             return response()->json([
             'message' => 'Not found!',
-            'data' => null
             ],404);
         }
 
@@ -322,8 +324,7 @@ class TransactionController extends Controller
             Account::findOrFail($accountID);
         }catch(ModelNotFoundException $exception){
             return response()->json([
-            'message' => 'Not found!',
-            'data' => null
+            'message' => 'Not found!'
             ],404);
         }
 
@@ -331,8 +332,7 @@ class TransactionController extends Controller
             Category::findOrFail($categoryID);
         }catch(ModelNotFoundException $exception){
             return response()->json([
-            'message' => 'Not found!',
-            'data' => null
+            'message' => 'Not found!'
             ],404);
         }
 
@@ -347,11 +347,21 @@ class TransactionController extends Controller
 
 
     public function searchTransaction(Request $request){
-        $searchInput=$request->query('input');
-        $transactions=[];
+        try{
+            $validatedData=$request->validate([
+            'input' => 'required|string|max:50'
+            ]);
+        }catch(ValidationException $exception){
+            return response()->json([
+                'message' => 'Unprocessable Entity'
+            ],422);
+        }
+        
+
+
 
         if($request->user()->role === 'user')
-        $transactions= Transaction::with('senderAccount.user','receiverAccount.user','senderAccount.currency','receiverAccount.currency','category')->where('name','like',"{$searchInput}%")->where(function ($query) use ($request){
+        $transactions= Transaction::with('senderAccount.user','receiverAccount.user','senderAccount.currency','receiverAccount.currency','category')->where('name','like',"%{$validatedData['input']}%")->where(function ($query) use ($request){
             $query->whereHas('senderAccount',function ($q) use ($request){
                 $q->where('user_id','=',$request->user()->id);
             })->orWhereHas('receiverAccount',function ($q) use ($request){
@@ -359,7 +369,7 @@ class TransactionController extends Controller
             });
         })->get();
         else
-        $transactions= Transaction::with('senderAccount.user','receiverAccount.user','senderAccount.currency','receiverAccount.currency','category')->where('name','like',"{$searchInput}%")->get();
+        $transactions= Transaction::with('senderAccount.user','receiverAccount.user','senderAccount.currency','receiverAccount.currency','category')->where('name','like',"%{$validatedData['input']}%")->get();
         
         
         return response()->json([

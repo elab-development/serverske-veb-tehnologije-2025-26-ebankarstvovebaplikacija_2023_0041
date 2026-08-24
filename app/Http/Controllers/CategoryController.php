@@ -101,7 +101,7 @@ class CategoryController extends Controller
         
          try{
             $validatedObject=$request->validate([
-                'name' => 'sometimes|string|max:30',
+                'name' => 'required|string|max:30',
             ]);
         }catch(ValidationException $exception){
             return response()->json([
@@ -111,8 +111,7 @@ class CategoryController extends Controller
         
         
 
-        if($request->has('name'))
-            $category->name=$request->name;
+        $category->name=$request->name;
 
 
 

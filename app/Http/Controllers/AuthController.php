@@ -13,7 +13,7 @@ class AuthController extends Controller
 {
     public function register(Request $request){
          try{
-            $validatedObject=$request->validate([
+            $validatedData=$request->validate([
                 'first_name' => 'required|string|max:30',
                 'last_name' => 'required|string|max:30',
                 'email' => 'required|email|unique:users,email',
@@ -27,7 +27,7 @@ class AuthController extends Controller
         }
 
         try{
-            User::create($validatedObject);
+            User::create($validatedData);
         }catch(QueryException $exception){
             return response()->json([
                 'message' => 'Internal Server Error',                
@@ -41,7 +41,7 @@ class AuthController extends Controller
 
     public function login(Request $request){
         try{
-            $validatedObject=$request->validate([
+            $validatedData=$request->validate([
             'email' => 'required|email',
             'password' => 'required|string'
             ]);
@@ -51,9 +51,9 @@ class AuthController extends Controller
             ],422);
         }
 
-        $user=User::where('email','=',$validatedObject['email'],null)->first();
+        $user=User::where('email','=',$validatedData['email'],null)->first();
         
-        if(!$user || !Hash::check($validatedObject['password'],$user->password)){
+        if(!$user || !Hash::check($validatedData['password'],$user->password)){
             return response()->json([
                 'message' => 'Invalid Credentials',                
             ],401);

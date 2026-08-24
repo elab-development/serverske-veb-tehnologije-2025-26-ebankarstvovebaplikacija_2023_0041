@@ -45,7 +45,7 @@ class AccountController extends Controller
                     'regex:/^\d{19}$/',
                     'unique:accounts,account_number',
                 ],
-                'balance' => ['required','regex:/^\d{1,15}(\.\d{1,2})?$/'],
+                'balance' => ['sometimes','regex:/^\d{1,13}(\.\d{1,2})?$/'],
                 'user_id' => 'required|exists:users,id',
                 'currency_id' => 'required|exists:currencies,id'
             ]);
@@ -117,8 +117,6 @@ class AccountController extends Controller
                     'unique:accounts,account_number',
                 ],
                 'balance' => ['sometimes','regex:/^\d{1,15}(\.\d{1,2})?$/'],
-                'user_id' => 'sometimes|exists:users,id',
-                'currency_id' => 'sometimes|exists:currencies,id'
             ]);
         }catch(ValidationException $exception){
             return response()->json([
@@ -134,18 +132,20 @@ class AccountController extends Controller
         if($request->has('balance'))
             $account->balance=$request->balance;
 
-        if($request->has('user_id'))
-            $account->user_id=$request->user_id;
 
-        if($request->has('currency_id'))
-            $account->currency_id=$request->currency_id;
+        try{
+            $saved = $account->save();
 
-        $saved = $account->save();
-
-        if(!$saved)
+            if(!$saved)
+                return response()->json([
+                'message' => 'Internal Server Error'
+                ],500);
+        }catch(QueryException $ex){
             return response()->json([
                 'message' => 'Internal Server Error'
-        ],500);
+                ],500);
+        }
+        
 
        
         return response()->json([
@@ -197,7 +197,7 @@ class AccountController extends Controller
     }
 
     public function getMyAccounts(Request $request){
-        $data=Account::where('user_id','=',$request->user()->id,null)->get();
+        $data=Account::with('currency')->where('user_id','=',$request->user()->id,null)->get()->makeHidden(['currency_id']);
         return response()->json([
             'message' => 'OK',
             'data' => $data

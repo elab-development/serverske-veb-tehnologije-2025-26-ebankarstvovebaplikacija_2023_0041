@@ -11,6 +11,8 @@ use App\Services\CurrencyService;
 use Illuminate\Database\QueryException;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Http;
+
 
 
 class CurrencyController extends Controller
@@ -42,7 +44,7 @@ class CurrencyController extends Controller
         try{
             $validatedObject=$request->validate([
                 'name' => 'required|string|max:30',
-                'code' => 'required|uppercase|size:3',
+                'code' => 'required|uppercase|size:3|unique:currencies,code',
             ]);
 
         }catch(ValidationException $exception){
@@ -50,6 +52,15 @@ class CurrencyController extends Controller
                 'message' => 'Unprocessable Entity',                
             ],422);
         }
+
+        
+        if(!CurrencyService::codeExists($validatedObject['code'])){
+            return response()->json([
+                'message' => 'Invalid currency code'
+            ],422);
+        }
+
+
 
         try{
             Currency::create($validatedObject);
@@ -105,8 +116,7 @@ class CurrencyController extends Controller
         
          try{
             $validatedObject=$request->validate([
-                'name' => 'sometimes|string|max:30',
-                'code' => 'sometimes|uppercase|size:3',
+                'name' => 'required|string|max:30',
             ]);
         }catch(ValidationException $exception){
             return response()->json([
@@ -114,15 +124,8 @@ class CurrencyController extends Controller
             ],422);
         }
         
-        
 
-        if($request->has('name'))
-            $currency->name=$request->name;
-
-        if($request->has('code'))
-            $currency->code=$request->code;
-
-
+        $currency->name = $validatedObject['name'];
 
         $saved = $currency->save();
 
@@ -188,7 +191,7 @@ class CurrencyController extends Controller
         $currencyService=new CurrencyService();
         return response()->json([
             'message' => 'OK',
-            'data' => $currencyService->exchange($fromCode,$toCode,$request->amount)
+            'converted_amount' => $currencyService->exchange($fromCode,$toCode,$request->amount)
         ],200);
 
     }

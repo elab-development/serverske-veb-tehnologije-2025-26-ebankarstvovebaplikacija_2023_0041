@@ -22,10 +22,6 @@ class UserResource extends JsonResource
                 ($request->user()?->role === 'admin' || $request->user()?->role === 'super_admin'), 
                 $this->email
             ),
-            'password' => $this->when(
-                ($request->user()?->role === 'admin' || $request->user()?->role === 'super_admin'), 
-                $this->password
-            ),
             'role' => $this->when(
                 ($request->user()?->role === 'admin' || $request->user()?->role === 'super_admin'), 
                 $this->role

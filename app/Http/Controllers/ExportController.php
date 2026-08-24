@@ -30,7 +30,6 @@ class ExportController extends Controller
                 'first_name',
                 'last_name',
                 'email',
-                'password',
                 'role'
             ]);
 
@@ -40,7 +39,6 @@ class ExportController extends Controller
                     $user->first_name,
                     $user->last_name,
                     $user->email,
-                    $user->password,
                     $user->role
                 ]);
             }
@@ -211,17 +209,23 @@ class ExportController extends Controller
             })->with(['receiverAccount','senderAccount','receiverAccount.currency','category'])->firstOrFail();
         }catch(ModelNotFoundException $exception){
             return response()->json([
-                'message' => 'Not found'
+                'message' => 'Not Found'
             ],404);
         }
         
+        $category="";
 
-
+        if($transaction->category === null)
+            $category='/';
+        else
+            $category=$transaction->category->name;
+            
+           
 
         $pdf = Pdf::loadView('pdf.transaction',[
             'id' => $transaction->id,
             'name' => $transaction->name,
-            'category' => $transaction->category->name,
+            'category' => $category,
             'senderAccount' => $transaction->senderAccount->account_number,
             'receiverAccount' => $transaction->receiverAccount->account_number,
             'currency' => $transaction->receiverAccount->currency->code,

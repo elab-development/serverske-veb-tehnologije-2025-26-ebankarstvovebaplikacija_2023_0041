@@ -18,12 +18,22 @@ class AccountFactory extends Factory
      * @return array<string, mixed>
      */
     public function definition(): array
-    {
+    {   
+        $users=User::all();
+        $currencies=Currency::all();
+
+        do{
+            $user=$users->random();
+            $currency=$currencies->random();
+            $exists=Account::where('user_id','=',$user->id,'and')->where('currency_id','=',$currency->id)->exists();
+        }while($exists);
+
+
         return [
             'account_number'=>fake()->unique()->numerify('###################'),
             'balance'=>fake()->randomFloat(2,0,1000000),
-            'user_id'=>User::inRandomOrder(null)->first()->id,
-            'currency_id'=>Currency::inRandomOrder(null)->first()->id
+            'user_id'=>$user->id,
+            'currency_id'=>$currency->id
         ];
     }
 }
