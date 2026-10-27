@@ -11,6 +11,7 @@ use App\Services\CurrencyService;
 use Illuminate\Database\QueryException;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 
@@ -22,9 +23,13 @@ class CurrencyController extends Controller
      */
     public function index()
     {
+        $currencies = Cache::rememberForever('currencies_all', function () {
+            return Currency::all();    
+        });
+
         return response()->json([
             'message' => 'OK',
-            'data' => CurrencyResource::collection(Currency::all())
+            'data' => CurrencyResource::collection($currencies)
         ],200);
     }
 
@@ -70,6 +75,7 @@ class CurrencyController extends Controller
             ],500);
         }
 
+        Cache::forget('currencies_all');
         return response()->json([
                 'message' => 'Created',                
             ],201);
@@ -79,18 +85,26 @@ class CurrencyController extends Controller
      * Display the specified resource.
      */
     public function show(string $id)
-    {
-        try{
-            $currency = Currency::findOrFail($id);
+    {       
+            $currency = Cache::rememberForever('currencies_all',function () {
+                return Currency::all();
+            });
+
+            $currency = $currency->firstWhere('id',$id);
+
+            if(!$currency)
+                 return response()->json([
+                'message' => 'Not Found',
+            ],404);
+
+
             return response()->json([
                 'message' => 'OK',
                 'data' => new CurrencyResource($currency)
             ],200);
-        }catch(ModelNotFoundException $exception){
-            return response()->json([
-                'message' => 'Not Found',
-            ],404);
-        }
+
+           
+        
     }
 
     /**
@@ -134,7 +148,7 @@ class CurrencyController extends Controller
                 'message' => 'Internal Server Error'
         ],500);
 
-       
+       Cache::forget('currencies_all');
         return response()->json([
                 'message' => 'OK'
         ],200);
@@ -153,6 +167,7 @@ class CurrencyController extends Controller
                 'message' => 'Not Found'
             ],404); 
 
+            Cache::forget('currencies_all');
             return response()->json([
                     'message' => 'OK'
             ],200); 

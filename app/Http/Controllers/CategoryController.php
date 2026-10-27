@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Cache;
 
 class CategoryController extends Controller
 {
@@ -16,10 +17,14 @@ class CategoryController extends Controller
      * Display a listing of the resource.
      */
     public function index()
-    {
+    {   
+        $categories = Cache::rememberForever('categories_all',function (){
+            return Category::all();
+        });
+
         return response()->json([
             'message' => 'OK',
-            'data' => CategoryResource::collection(Category::all())
+            'data' => CategoryResource::collection($categories)
         ],200);
     }
 
@@ -55,6 +60,7 @@ class CategoryController extends Controller
             ],500);
         }
 
+        Cache::forget('categories_all');
         return response()->json([
                 'message' => 'Created',                
             ],201);
@@ -65,17 +71,24 @@ class CategoryController extends Controller
      */
     public function show(string $id)
     {
-        try{
-            $category = Category::findOrFail($id);
+        
+
+            $category = Cache::rememberForever('categories_all',function (){
+                return Category::all();
+            });
+
+            $category = $category->firstWhere('id',$id);
+
+            if(!$category)
+                return response()->json([
+                'message' => 'Not Found',
+            ],404);
+
             return response()->json([
                 'message' => 'OK',
                 'data' => new CategoryResource($category)
             ],200);
-        }catch(ModelNotFoundException $exception){
-            return response()->json([
-                'message' => 'Not Found',
-            ],404);
-        }
+        
     }
 
     /**
@@ -123,6 +136,7 @@ class CategoryController extends Controller
         ],500);
 
        
+        Cache::forget('categories_all');
         return response()->json([
                 'message' => 'OK'
         ],200);
@@ -141,6 +155,7 @@ class CategoryController extends Controller
                 'message' => 'Not Found'
             ],404); 
 
+            Cache::forget('categories_all');
             return response()->json([
                     'message' => 'OK'
             ],200); 

@@ -133,7 +133,12 @@ class TransactionController extends Controller
                 })->orWhereHas('receiverAccount',function ($q) use ($request){
                     $q->where('user_id','=',$request->user()->id);
                 });
-            })->firstOrFail()); 
+            })->firstOrFail());
+            
+            return response()->json([
+                'message' => 'OK',
+                'data' => $data
+            ],200);
 
             }catch(ModelNotFoundException $exception){
                 return response()->json([
